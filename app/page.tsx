@@ -1,4 +1,11 @@
 ﻿import { prisma } from "../lib/prisma";
+import Link from 'next/link';
+// ...
+<div className="flex gap-3 mb-4">
+  <Link href="/matches/new" className="underline">Ny kamp</Link>
+  <Link href="/matches" className="underline">Kampliste</Link>
+</div>
+
 
 export default async function Home() {
   const users = await prisma.user.findMany({ orderBy: { name: "asc" } });
