@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/prisma/client';
 import { calcElo } from '@/lib/elo';
