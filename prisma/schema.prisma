@@ -1,0 +1,89 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?  @unique
+  role      UserRole @default(USER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations (behold kun disse)
+  createdMatches Match[]      @relation("UserCreatedMatches")
+  eloHistories   EloHistory[]
+  eloRating      EloRating?
+
+  // Back-relations for MatchSet (krævet pga. navngivne relationer)
+  matchSetsTeamAPlayer1 MatchSet[] @relation("TeamAPlayer1")
+  matchSetsTeamAPlayer2 MatchSet[] @relation("TeamAPlayer2")
+  matchSetsTeamBPlayer1 MatchSet[] @relation("TeamBPlayer1")
+  matchSetsTeamBPlayer2 MatchSet[] @relation("TeamBPlayer2")
+}
+
+model Match {
+  id          String   @id @default(uuid())
+  playedAt    DateTime
+  createdById String
+  createdBy   User     @relation("UserCreatedMatches", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  notes       String?
+
+  sets         MatchSet[]
+  eloHistories EloHistory[]
+}
+
+model MatchSet {
+  id String @id @default(uuid())
+
+  matchId String
+  match   Match  @relation(fields: [matchId], references: [id])
+
+  setIndex Int
+
+  // Team A
+  teamAPlayer1Id String
+  teamAPlayer1   User    @relation("TeamAPlayer1", fields: [teamAPlayer1Id], references: [id])
+  teamAPlayer2Id String?
+  teamAPlayer2   User?   @relation("TeamAPlayer2", fields: [teamAPlayer2Id], references: [id])
+
+  // Team B
+  teamBPlayer1Id String
+  teamBPlayer1   User    @relation("TeamBPlayer1", fields: [teamBPlayer1Id], references: [id])
+  teamBPlayer2Id String?
+  teamBPlayer2   User?   @relation("TeamBPlayer2", fields: [teamBPlayer2Id], references: [id])
+
+  scoreA Int
+  scoreB Int
+}
+
+model EloRating {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id])
+  rating    Int      @default(1000)
+  updatedAt DateTime @updatedAt
+}
+
+model EloHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  matchId     String?
+  match       Match?   @relation(fields: [matchId], references: [id])
+  delta       Int
+  ratingAfter Int
+  createdAt   DateTime @default(now())
+}
