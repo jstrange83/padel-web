@@ -17,6 +17,15 @@ type SetInput = {
   scoreB: number | "";
 };
 
+function getErrMsg(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  try {
+    return String(e);
+  } catch {
+    return "Ukendt fejl";
+  }
+}
+
 export default function NewMatchPage() {
   const router = useRouter();
   const [players, setPlayers] = useState<User[]>([]);
@@ -25,8 +34,8 @@ export default function NewMatchPage() {
 
   // form state
   const [createdById, setCreatedById] = useState<string>("");
-  const [date, setDate] = useState<string>(""); // yyyy-mm-dd
-  const [time, setTime] = useState<string>("18:00"); // hh:mm
+  const [date, setDate] = useState<string>("");
+  const [time, setTime] = useState<string>("18:00");
 
   const [teamA1, setTeamA1] = useState<string>("");
   const [teamA2, setTeamA2] = useState<string>("");
@@ -43,23 +52,21 @@ export default function NewMatchPage() {
       try {
         setLoadingPlayers(true);
         const res = await fetch("/api/players", { cache: "no-store" });
-        if (!res.ok) {
-          throw new Error(`Kunne ikke hente spillere (${res.status})`);
-        }
+        if (!res.ok) throw new Error(`Kunne ikke hente spillere (${res.status})`);
         const data = (await res.json()) as User[];
-        // kun aktive spillere
         const active = data.filter((u) => u.isActive);
         setPlayers(active);
-        // for-udfyld "Oprettet af" hvis vi har Jimmy i listen – ellers første spiller
-        const jimmy = active.find((u) => u.name.toLowerCase().includes("jimmy"));
+        const jimmy = active.find((u) =>
+          u.name.toLowerCase().includes("jimmy")
+        );
         setCreatedById(jimmy?.id ?? active[0]?.id ?? "");
-      } catch (e: any) {
-        setError(e?.message ?? "Ukendt fejl ved hentning af spillere");
+      } catch (e: unknown) {
+        setError(getErrMsg(e));
       } finally {
         setLoadingPlayers(false);
       }
     };
-    run();
+    void run();
   }, []);
 
   const playerOptions = useMemo(
@@ -86,22 +93,22 @@ export default function NewMatchPage() {
   }
 
   function removeSet(idx: number) {
-    setSets((prev) => prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, setIndex: i + 1 })));
+    setSets((prev) =>
+      prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, setIndex: i + 1 }))
+    );
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
     // simple validering
-    const chosen = [teamA1, teamA2, teamB1, teamB2];
-    const hasDuplicate =
-      new Set(chosen.filter(Boolean)).size !== chosen.filter(Boolean).length;
-    if (hasDuplicate) {
+    const chosen = [teamA1, teamA2, teamB1, teamB2].filter(Boolean);
+    if (new Set(chosen).size !== chosen.length) {
       setError("Den samme spiller er valgt flere gange.");
       return;
     }
-    if (!teamA1 || !teamA2 || !teamB1 || !teamB2) {
+    if (chosen.length !== 4) {
       setError("Vælg alle 4 spillere.");
       return;
     }
@@ -110,10 +117,8 @@ export default function NewMatchPage() {
       return;
     }
 
-    // playedAt som ISO (brug dato + evt. tid)
-    const playedAt = new Date(`${date}T${time || "00:00"}:00`);
+    const playedAt = new Date(`${date}T${(time || "00:00").padStart(5, "0")}:00`);
 
-    // bygg payload
     const body = {
       createdById,
       playedAt: playedAt.toISOString(),
@@ -138,13 +143,12 @@ export default function NewMatchPage() {
       if (!res.ok) {
         const txt = await res.text();
         throw new Error(`Kunne ikke oprette kamp: ${res.status} ${txt}`);
-      }
+        }
 
-      // succes – send brugeren til kamplisten
       router.push("/matches");
       router.refresh();
-    } catch (err: any) {
-      setError(err?.message ?? "Kunne ikke oprette kamp.");
+    } catch (e: unknown) {
+      setError(getErrMsg(e));
     }
   }
 
@@ -177,7 +181,6 @@ export default function NewMatchPage() {
       )}
 
       <form onSubmit={onSubmit} style={{ display: "grid", gap: 16 }}>
-        {/* Oprettet af + dato/tid */}
         <div
           style={{
             display: "grid",
@@ -226,7 +229,6 @@ export default function NewMatchPage() {
           </div>
         </div>
 
-        {/* Holdvalg */}
         <div
           style={{
             display: "grid",
@@ -295,7 +297,6 @@ export default function NewMatchPage() {
           </fieldset>
         </div>
 
-        {/* Sæt-resultater */}
         <div
           style={{
             border: "1px solid #e5e7eb",
