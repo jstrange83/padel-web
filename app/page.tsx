@@ -5,7 +5,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen p-8">
-      <h1 className="text-2xl font-bold mb-6">Padel – Brugere</h1>
+      <h1 className="text-2xl font-bold mb-6">Padelholdets – Brugere</h1>
       <div className="grid gap-2">
         {users.length === 0 ? (
           <p>Ingen brugere fundet.</p>
