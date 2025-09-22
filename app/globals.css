@@ -1,50 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------- Globale UI-klasser ---------- */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-full font-medium transition
+           border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:scale-[0.99] disabled:opacity-50;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-/* ---- Globale knapper ---- */
-button {
-  @apply font-medium rounded-full transition;
-}
+  .btn-primary {
+    @apply bg-padelblue text-white border-transparent hover:brightness-95 focus:ring-2 focus:ring-padelblue/30;
+  }
 
-.btn-primary {
-  @apply bg-padelblue text-white px-4 py-2 hover:bg-blue-700;
-}
+  .score-pill {
+    @apply w-10 h-10 rounded-full inline-flex items-center justify-center border border-gray-300
+           text-gray-700 bg-white hover:bg-gray-50 cursor-pointer select-none;
+  }
 
-.btn-secondary {
-  @apply bg-padelgray text-gray-700 px-4 py-2 border border-gray-300 hover:bg-gray-200;
-}
-
-.score-btn {
-  @apply w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 
-         text-gray-700 cursor-pointer select-none;
-}
-
-.score-btn-active {
-  @apply bg-padelblue text-white border-padelblue;
+  .score-pill--active {
+    @apply bg-padelblue text-white border-padelblue;
+  }
 }
