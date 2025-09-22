@@ -24,13 +24,13 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
   const [teamB2, setTeamB2] = useState<string>("");
 
   // Dato + Tid
-  const [date, setDate] = useState<string>(""); // yyyy-mm-dd (native date input)
+  const [date, setDate] = useState<string>(""); // yyyy-mm-dd
   const [time, setTime] = useState<string>("18:00"); // hh:mm
 
   // Sæt
   const [sets, setSets] = useState<SetRow[]>([{ setIndex: 0, scoreA: 0, scoreB: 0 }]);
 
-  // Hjælpere til dropdowns: undgå at vælge samme spiller flere gange
+  // undgå at vælge samme spiller flere gange
   const chosenIds = useMemo(
     () => new Set([createdById, teamA1, teamA2, teamB1, teamB2].filter(Boolean)),
     [createdById, teamA1, teamA2, teamB1, teamB2]
@@ -38,7 +38,7 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
 
   const optionsFor = (currentId: string) =>
     players
-      .filter((p) => !chosenIds.has(p.id) || p.id === currentId) // tillad nuværende valgte
+      .filter((p) => !chosenIds.has(p.id) || p.id === currentId)
       .map((p) => (
         <option key={p.id} value={p.id}>
           {p.name}
@@ -56,25 +56,24 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
     setSets((prev) => (prev.length > 1 ? prev.slice(0, -1) : prev));
   }
 
-  function updateSet(ix: number, key: "scoreA" | "scoreB", val: number) {
+  function setScore(ix: number, team: "A" | "B", val: number) {
     setSets((prev) =>
-      prev.map((s, i) => (i === ix ? { ...s, [key]: val } : s))
+      prev.map((s, i) =>
+        i === ix ? { ...s, [team === "A" ? "scoreA" : "scoreB"]: val } : s
+      )
     );
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Simple validering
     if (!createdById) return alert("Vælg 'Oprettet af'.");
     if (!teamA1 || !teamA2 || !teamB1 || !teamB2)
       return alert("Vælg alle fire spillere.");
     if (!date || !time) return alert("Vælg dato og tid.");
 
-    // Kombinér dato+tid til ISO
     const playedAt = new Date(`${date}T${time}:00`);
 
-    // Byg payload så den matcher /api/matches (match + sets)
     const payload = {
       createdById,
       playedAt: playedAt.toISOString(),
@@ -95,26 +94,25 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       if (!res.ok) {
         const msg = await res.text().catch(() => "");
         throw new Error(msg || "Kunne ikke gemme kamp.");
       }
-
-      // Gå tilbage til oversigten (tilpas som du ønsker)
       router.push("/matches");
       router.refresh();
-    } catch (err: unknown) {
+    } catch (err) {
       const message = err instanceof Error ? err.message : "Ukendt fejl";
       alert(message);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-5xl mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-semibold">Opret kamp</h1>
+    <form onSubmit={onSubmit} className="max-w-4xl mx-auto p-4 space-y-6">
+      <h1 className="text-2xl font-semibold flex items-center gap-2">
+        🔎 Indtast resultater
+      </h1>
 
-      {/* Oprettet af + Dato/Tid */}
+      {/* Toplinje: opretter + dato/tid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm mb-1">Oprettet af</label>
@@ -127,7 +125,6 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
             {optionsFor(createdById)}
           </select>
         </div>
-
         <div>
           <label className="block text-sm mb-1">Dato</label>
           <input
@@ -137,7 +134,6 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
-
         <div>
           <label className="block text-sm mb-1">Tid</label>
           <input
@@ -149,127 +145,151 @@ export default function NewMatchForm({ players }: { players: Player[] }) {
         </div>
       </div>
 
-      {/* Teams */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Team A */}
-        <div className="rounded border p-4">
-          <h2 className="font-medium mb-3">Team A</h2>
+      {/* Alle sæt */}
+      {sets.map((s, i) => (
+        <div key={i} className="rounded-2xl border p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-lg font-semibold">Sæt #{i + 1}</div>
+          </div>
 
-          <label className="block text-sm mb-1">Vælg spiller 1</label>
-          <select
-            className="w-full border rounded px-3 py-2 mb-3"
-            value={teamA1}
-            onChange={(e) => setTeamA1(e.target.value)}
-          >
-            <option value="">Vælg spiller 1</option>
-            {optionsFor(teamA1)}
-          </select>
+          {/* Hold A */}
+          <div className="rounded-xl border p-4 mb-4">
+            <div className="font-medium mb-2">Hold A</div>
 
-          <label className="block text-sm mb-1">Vælg spiller 2</label>
-          <select
-            className="w-full border rounded px-3 py-2"
-            value={teamA2}
-            onChange={(e) => setTeamA2(e.target.value)}
-          >
-            <option value="">Vælg spiller 2</option>
-            {optionsFor(teamA2)}
-          </select>
-        </div>
-
-        {/* Team B */}
-        <div className="rounded border p-4">
-          <h2 className="font-medium mb-3">Team B</h2>
-
-          <label className="block text-sm mb-1">Vælg spiller 1</label>
-          <select
-            className="w-full border rounded px-3 py-2 mb-3"
-            value={teamB1}
-            onChange={(e) => setTeamB1(e.target.value)}
-          >
-            <option value="">Vælg spiller 1</option>
-            {optionsFor(teamB1)}
-          </select>
-
-          <label className="block text-sm mb-1">Vælg spiller 2</label>
-          <select
-            className="w-full border rounded px-3 py-2"
-            value={teamB2}
-            onChange={(e) => setTeamB2(e.target.value)}
-          >
-            <option value="">Vælg spiller 2</option>
-            {optionsFor(teamB2)}
-          </select>
-        </div>
-      </div>
-
-      {/* Sæt */}
-      <div className="rounded border p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-medium">Sæt</h2>
-          <div className="space-x-2">
-            <button
-              type="button"
-              onClick={addSet}
-              className="px-3 py-1 rounded bg-black text-white"
+            <label className="block text-xs mb-1 text-gray-600">Spiller A1</label>
+            <select
+              className="w-full border rounded px-3 py-2 mb-3"
+              value={teamA1}
+              onChange={(e) => setTeamA1(e.target.value)}
             >
-              + Tilføj sæt
-            </button>
-            <button
-              type="button"
-              onClick={removeLastSet}
-              className="px-3 py-1 rounded bg-rose-500 text-white"
+              <option value="">Vælg spiller…</option>
+              {optionsFor(teamA1)}
+            </select>
+
+            <label className="block text-xs mb-1 text-gray-600">Spiller A2</label>
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={teamA2}
+              onChange={(e) => setTeamA2(e.target.value)}
             >
-              Fjern
-            </button>
+              <option value="">Vælg spiller…</option>
+              {optionsFor(teamA2)}
+            </select>
+
+            {/* Scoreknapper A */}
+            <div className="mt-4">
+              <div className="text-xs mb-2 text-gray-600">SCORE</div>
+              <ScorePills
+                value={s.scoreA}
+                onChange={(val) => setScore(i, "A", val)}
+              />
+            </div>
+          </div>
+
+          {/* Hold B */}
+          <div className="rounded-xl border p-4">
+            <div className="font-medium mb-2">Hold B</div>
+
+            <label className="block text-xs mb-1 text-gray-600">Spiller B1</label>
+            <select
+              className="w-full border rounded px-3 py-2 mb-3"
+              value={teamB1}
+              onChange={(e) => setTeamB1(e.target.value)}
+            >
+              <option value="">Vælg spiller…</option>
+              {optionsFor(teamB1)}
+            </select>
+
+            <label className="block text-xs mb-1 text-gray-600">Spiller B2</label>
+            <select
+              className="w-full border rounded px-3 py-2"
+              value={teamB2}
+              onChange={(e) => setTeamB2(e.target.value)}
+            >
+              <option value="">Vælg spiller…</option>
+              {optionsFor(teamB2)}
+            </select>
+
+            {/* Scoreknapper B */}
+            <div className="mt-4">
+              <div className="text-xs mb-2 text-gray-600">SCORE</div>
+              <ScorePills
+                value={s.scoreB}
+                onChange={(val) => setScore(i, "B", val)}
+              />
+            </div>
           </div>
         </div>
+      ))}
 
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 text-sm font-medium mb-2">
-          <div className="col-span-2 md:col-span-3">Sæt</div>
-          <div>Team A</div>
-          <div>Team B</div>
-        </div>
-
-        {sets.map((s, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-3 md:grid-cols-5 gap-2 items-center py-1"
-          >
-            <div className="col-span-2 md:col-span-3">Sæt {i + 1}</div>
-            <input
-              type="number"
-              min={0}
-              value={s.scoreA}
-              onChange={(e) => updateSet(i, "scoreA", Number(e.target.value))}
-              className="border rounded px-2 py-1 w-full"
-            />
-            <input
-              type="number"
-              min={0}
-              value={s.scoreB}
-              onChange={(e) => updateSet(i, "scoreB", Number(e.target.value))}
-              className="border rounded px-2 py-1 w-full"
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Knapper */}
-      <div className="flex items-center gap-3">
+      {/* Knapper nederst */}
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={addSet}
+          className="px-4 py-2 rounded-full bg-white border shadow-sm hover:bg-gray-50"
+        >
+          ➕ Tilføj sæt
+        </button>
+        <button
+          type="button"
+          onClick={removeLastSet}
+          className="px-4 py-2 rounded-full bg-rose-500 text-white hover:bg-rose-600"
+        >
+          Fjern sidste sæt
+        </button>
+        <div className="grow" />
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2 rounded border"
+          className="px-4 py-2 rounded-full border bg-white hover:bg-gray-50"
         >
           Annullér
         </button>
         <button
           type="submit"
-          className="px-4 py-2 rounded bg-green-600 text-white"
+          className="px-5 py-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700"
         >
-          Gem kamp
+          Indsend resultater
         </button>
       </div>
+
+      <p className="text-xs text-gray-500">
+        Tip: Tilføj flere sæt før du indsender – de samles under samme kamp-ID.
+      </p>
     </form>
+  );
+}
+
+/** Runde score-knapper 0..7 */
+function ScorePills({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (val: number) => void;
+}) {
+  const nums = [0, 1, 2, 3, 4, 5, 6, 7];
+  return (
+    <div className="grid grid-cols-4 gap-2 max-w-md">
+      {nums.map((n) => {
+        const active = value === n;
+        return (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            className={[
+              "h-10 rounded-full border text-sm font-medium transition",
+              active
+                ? "bg-pink-600 text-white border-pink-600 shadow"
+                : "bg-white hover:bg-gray-50",
+            ].join(" ")}
+          >
+            {n}
+          </button>
+        );
+      })}
+    </div>
   );
 }
