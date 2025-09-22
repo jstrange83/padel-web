@@ -27,3 +27,24 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* ---- Globale knapper ---- */
+button {
+  @apply font-medium rounded-full transition;
+}
+
+.btn-primary {
+  @apply bg-padelblue text-white px-4 py-2 hover:bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-padelgray text-gray-700 px-4 py-2 border border-gray-300 hover:bg-gray-200;
+}
+
+.score-btn {
+  @apply w-10 h-10 flex items-center justify-center rounded-full border border-gray-300 
+         text-gray-700 cursor-pointer select-none;
+}
+
+.score-btn-active {
+  @apply bg-padelblue text-white border-padelblue;
+}
